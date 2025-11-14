@@ -1,187 +1,171 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>مولد ومسح QR مشفر</title>
- <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
- <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
- <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
- <link rel="shortcut icon" href="undefined.jpg" type="image/x-icon">
-<style>
-body {
-    font-family: 'Segoe UI', sans-serif;
-    text-align: center;
-    background: linear-gradient(to bottom right, #071e35, #649aec);
-    min-height: 100vh;
-    padding: 20px;
-}
-h2 { color: #0380fd; text-shadow: 1px 3px 5px rgba(0, 0, 0, 0.986); }
-input, button {
-    padding: 12px;
-    width: 80%;
-    margin: 8px;
-    border-radius: 12px;
-    border: none;
-    font-size: 16px;
-}
-button {
-    background: #2270be;
-    color: rgb(252, 251, 251);
-    cursor: pointer;
-    transition: 0.3s;
-}
-button:hover { background: #03509c; transform: scale(1.05); }
-#qrcode { margin: 20px auto; }
-#decrypted { margin-top: 20px; font-weight: bold; color: #04386b; }
-#cameraContainer { display: none; margin-top: 20px; }
-video {
-    width: 320px; height: 240px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>سجل المريض - الكارت الصحي الذكي</title>
+  <link rel="shortcut icon" href="undefined.jpg" type="image/x-icon">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root { --accent: #0b6fb1; --light: #e7f3fa; }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+    body { margin: 0; background: #75c1f3; color: #000203; transition: all 0.3s ease; }
+
+    header {
+      background: linear-gradient(90deg, #0c37c5, #3d90b6);
+      color: #fff; padding: 15px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      box-shadow: 0 5px 9px rgb(2, 2, 0);
+    }
+    .title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+    .title img { height: 50px; border-radius: 6px; }
+
+    .search-box {
+      background: #ffffff;
+      border-radius: 25px;
+      padding: 5px 12px;
+      display: flex;
+      align-items: center;
+      width: 70%;
+      max-width: 320px;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 6px rgba(0,0,0,0.2);
+      margin-top: 10px;
+    }
+    .search-box:focus-within {
+      box-shadow: 0 0 12px rgba(11,111,177,0.6);
+      transform: scale(1.03);
+    }
+    .search-box input {
+      border: none;
+      outline: none;
+      flex: 1;
+      padding: 6px;
+      border-radius: 25px;
+      font-size: 16px;
+    }
+    .search-box i {
+      font-size: 18px;
+      transition: color 0.3s ease;
+    }
+    .search-box:focus-within i {
+      color: var(--accent);
+    }
+
+    main { padding: 20px; max-width: 900px; margin: auto; }
+    .section {
+      background: #fffffff6;
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 9px rgb(1, 252, 147);
+      text-align: center;
+      opacity: 1;
+      transition: opacity 0.4s ease, transform 0.3s ease;
+    }
+    .section.hidden {
+      opacity: 0;
+      transform: scale(0.98);
+      pointer-events: none;
+      height: 0;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .section h2 { color: #0b6fb1; font-size: 24px; border-bottom: 3px solid #8fd5fdbd; padding-bottom: 9px; margin-bottom: 20px; }
+    .info { text-align: right; margin: 8px 0; font-weight: 600; }
+    .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; margin: 5px; transition: all 0.3s ease; }
+    .btn:hover { background: #094c7d; transform: scale(1.05); }
+
+    footer { text-align: center; padding: 10px; color: rgb(0, 0, 0); font-size: 15px; }
+
+    @media screen and (max-width: 480px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .search-box { width: 100%; max-width: 100%; }
+      .search-box input { font-size: 14px; }
+      .search-box i { font-size: 16px; }
+      .btn { padding: 8px 12px; font-size: 14px; margin: 3px; }
+      .section h2 { font-size: 20px; }
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <div class="title">
+      <img src="undefined.jpg" alt="شعار وزارة الصحة">
+      🩺 الكارت الصحي الذكي
+    </div>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="ابحث عن قسم طب...">
+      <i class="fas fa-search" style="color: #0c37c5;"></i>
+    </div>
+  </header>
 
-<h2>🔐 مولد ومسح QR مشفر</h2>
+  <main id="sections">
+    <div class="section">
+      <h2>سجل المريض</h2>
+      <div class="info">الاسم: باسم إيهاب سليمان عبدالسلام </div>
+      <div class="info"> المحافظة: شبشير الحصة / مركز طنطا - الغربية </div>
+      <div class="info">الرقم القومي: 30510231600658</div>
+      <div class="info">رقم التسلسل (ID): 10203040</div>
+      <div class="info">فصيلة الدم: +A</div>
+    </div>
 
-<input type="text" id="linkInput" placeholder="أدخل اللينك هنا">
-<br>
-<button onclick="generateQR()">إنشاء QR مشفر</button>
-<button onclick="downloadQR()">تحميل QR</button>
-<button onclick="openLink()">فتح الرابط</button>
-<button onclick="uploadImage()">📁 رفع صورة QR</button>
-<button onclick="scanCamera()">📷 مسح بالكاميرا</button>
-<button onclick="stopCamera()">❌ إيقاف الكاميرا</button>
+    <div class="section">
+      <h2>الأمراض المزمنة</h2>
+      <button class="btn" onclick="window.location.href='امراض مزمنه.html'">عرض الصفحة</button>
+    </div>
 
-<canvas id="qrcode"></canvas>
+    <div class="section">
+      <h2>قسم الأشعة</h2>
+      <button class="btn" onclick="window.location.href='الاشعه.html'">عرض الصفحة</button>
+    </div>
 
-<div id="cameraContainer">
-  <video id="camera" autoplay></video>
-  <canvas id="cameraCanvas" width="320" height="240" style="display:none;"></canvas>
-</div>
+    <div class="section">
+      <h2>قسم التحاليل</h2>
+      <button class="btn" onclick="window.location.href='التحاليل.html'">عرض الصفحة</button>
+    </div>
 
-<p id="decrypted"></p>
+    <div class="section">
+      <h2>الأدوية</h2>
+      <button class="btn" onclick="window.location.href='الادويه.html'">عرض الصفحة</button>
+    </div>
 
-<script>
-const secretKey = "BassemSecret123";
-let currentLink = "";
-let currentCiphertext = "";
-let cameraStream = null;
-let scanInterval = null;
+    <div class="section">
+      <h2>أقسام الطب</h2>
+      <button class="btn" onclick="window.location.href='العضام.html'">العظام</button>
+      <button class="btn" onclick="window.location.href='البطنه.html'">الباطنة</button>
+      <button class="btn" onclick="window.location.href='القلب.html'">القلب</button>
+      <button class="btn" onclick="window.location.href='مخ واعصاب.html'">مخ واعصاب</button>
+      <button class="btn" onclick="window.location.href='الرمد.html'">الرمد</button>
+      <button class="btn" onclick="window.location.href='انف واذن.html'">الأنف والأذن</button>
+      <button class="btn" onclick="window.location.href='الاطفال.html'">الأطفال</button>
+      <button class="btn" onclick="window.location.href='النساء والتوليد.html'">النساء والتوليد</button>
+      <button class="btn" onclick="window.location.href='المسالك البوليه.html'">المسالك البولية</button>
+      <button class="btn" onclick="window.location.href='الجلدية.html'">الجلدية</button>
+      <button class="btn" onclick="window.location.href='الاسنان.html'">الأسنان</button>
+      <button class="btn" onclick="window.location.href='الطوارئ.html'">الطوارئ</button>
+      <button class="btn" onclick="window.location.href='اجراء في عربه الاسعاف.html'">اجراء عربه الاسعاف</button>
+    </div>
+  </main>
 
-// توليد QR
-function generateQR() {
-  const link = document.getElementById("linkInput").value;
-  if(!link) return alert("أدخل اللينك أولاً!");
-  currentLink = link;
-  currentCiphertext = CryptoJS.AES.encrypt(link, secretKey).toString();
-  QRCode.toCanvas(document.getElementById("qrcode"), currentCiphertext, { width: 250 });
-  document.getElementById("decrypted").innerText = "";
-}
+  <footer>© وزارة الصحة المصرية - سجل المريض</footer>
 
-// تحميل QR
-function downloadQR() {
-  const canvas = document.getElementById("qrcode");
-  if(!canvas) return alert("أنشئ QR أولاً!");
-  const link = document.createElement("a");
-  link.download = "qr_code.png";
-  link.href = canvas.toDataURL();
-  link.click();
-}
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const sections = document.querySelectorAll('.section');
 
-// فتح الرابط
-function openLink() {
-  if(!currentLink) return alert("لا يوجد رابط حالياً!");
-  window.open(currentLink, "_blank");
-}
-
-// رفع صورة QR من الجهاز
-function uploadImage() {
-  stopCamera();
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = "image/*";
-  fileInput.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function() {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        decodeQR(imageData);
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  };
-  fileInput.click();
-}
-
-// تشغيل الكاميرا
-function scanCamera() {
-  stopCamera();
-  const video = document.getElementById("camera");
-  const container = document.getElementById("cameraContainer");
-  const canvas = document.getElementById("cameraCanvas");
-  const ctx = canvas.getContext("2d");
-
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => {
-      cameraStream = stream;
-      video.srcObject = stream;
-      container.style.display = "block";
-
-      scanInterval = setInterval(() => {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-        if (code) {
-          decodeText(code.data);
+    searchInput.addEventListener('keyup', function() {
+      const value = this.value.toLowerCase().trim();
+      sections.forEach(section => {
+        const text = section.textContent.toLowerCase();
+        if (text.includes(value)) {
+          section.classList.remove('hidden');
+        } else {
+          section.classList.add('hidden');
         }
-      }, 500);
-    })
-    .catch(err => alert("فشل في تشغيل الكاميرا: " + err));
-}
-
-// إيقاف الكاميرا
-function stopCamera() {
-  if (cameraStream) {
-    cameraStream.getTracks().forEach(track => track.stop());
-    cameraStream = null;
-  }
-  if (scanInterval) clearInterval(scanInterval);
-  document.getElementById("cameraContainer").style.display = "none";
-}
-
-// فك تشفير النص
-function decodeText(text) {
-  try {
-    const bytes = CryptoJS.AES.decrypt(text, secretKey);
-    const originalLink = bytes.toString(CryptoJS.enc.Utf8);
-    if (originalLink) {
-      document.getElementById("decrypted").innerText = "فتح الرابط تلقائيًا: " + originalLink;
-      window.open(originalLink, "_blank");
-      stopCamera();
-    }
-  } catch {
-    document.getElementById("decrypted").innerText = "فشل في فك التشفير!";
-  }
-}
-
-// فك QR من صورة
-function decodeQR(imageData) {
-  const code = jsQR(imageData.data, imageData.width, imageData.height);
-  if (code) decodeText(code.data);
-  else document.getElementById("decrypted").innerText = "لم يتم العثور على QR في الصورة!";
-}
-</script>
+      });
+    });
+  </script>
 </body>
 </html>
